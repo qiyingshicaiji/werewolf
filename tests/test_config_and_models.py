@@ -1,6 +1,6 @@
-from pathlib import Path
-import tempfile
 import unittest
+import uuid
+from pathlib import Path
 
 from werewolf.config import load_config
 from werewolf.models import DiscussionModelCN, VoteModelCN
@@ -29,9 +29,9 @@ players:
   - {name: D, role: villager, character: 孙尚香}
   - {name: E, role: villager, character: 刘备}
 """
-        with tempfile.NamedTemporaryFile("w", suffix=".yaml", dir=Path.cwd(), delete=False, encoding="utf-8") as fp:
-            fp.write(content)
-            temp_path = Path(fp.name)
+        config_dir = Path("config")
+        temp_path = config_dir / f"test_bad_{uuid.uuid4().hex}.yaml"
+        temp_path.write_text(content, encoding="utf-8")
         try:
             with self.assertRaises(ValueError):
                 load_config(temp_path)

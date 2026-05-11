@@ -159,7 +159,7 @@ class SanguoWerewolfGame:
             tally[vote.target] = tally.get(vote.target, 0) + 1
         if not tally:
             return self._werewolf_kill()
-        target = max(tally, key=tally.get)
+        target = self._pick_by_tally(tally, "werewolf_vote")
         return WerewolfKillModelCN(target=target, reason="狼人内部投票结果")
 
     def _seer_check(self) -> SeerCheckModelCN | None:
@@ -202,6 +202,14 @@ class SanguoWerewolfGame:
             votes.append(VoteModelCN(target=target.name, reason=f"{voter.character}认为其发言可疑"))
         return votes
 
+    def _pick_by_tally(self, tally: dict[str, int], reason: str) -> str:
+        highest = max(tally.values())
+        candidates = [name for name, score in tally.items() if score == highest]
+        winner = self.rng.choice(candidates)
+        if len(candidates) > 1:
+            self.logger.write("tie_break", {"reason": reason, "candidates": candidates, "chosen": winner})
+        return winner
+
     async def _fanout(self, speaker_names: list[str], msg: Msg) -> None:
         agents = [self.agents[n] for n in speaker_names]
         async with MsgHub(participants=agents, enable_auto_broadcast=True):
@@ -234,11 +242,14 @@ class SanguoWerewolfGame:
 
             seer_action = self._seer_check()
             if seer_action:
-                checked = next(p for p in self.players if p.name == seer_action.target)
-                self.logger.write(
-                    "seer_check",
-                    {**seer_action.model_dump(), "result": checked.role != "werewolf"},
-                )
+                checked = next((p for p in self.players if p.name == seer_action.target), None)
+                if checked:
+                    self.logger.write(
+                        "seer_check",
+                        {**seer_action.model_dump(), "result": checked.role != "werewolf"},
+                    )
+                else:
+                    self.logger.write("error", {"where": "seer_check", "error": "target not found"})
 
             witch_action = self._witch_action(werewolf_action.target)
             if witch_action:
@@ -283,7 +294,7 @@ class SanguoWerewolfGame:
                     return {"winner": result, "log_path": str(self.logger.path)}
                 self.day += 1
                 continue
-            out_name = max(tally, key=tally.get)
+            out_name = self._pick_by_tally(tally, "day_vote")
             self._eliminate(out_name, "白天公投")
 
             result = self._win_check()
