@@ -1,0 +1,37 @@
+game:
+  max_days: 3
+  speaking_rounds: 1
+  mode: simulate
+  enable_distributed: false
+  distributed:
+    backend: simulated
+    workers:
+      - id: worker-1
+        host: localhost
+      - id: worker-2
+        host: localhost
+players:
+  - name: 玩家1
+    role: werewolf
+    character: 曹操
+  - name: 玩家2
+    role: werewolf
+    character: 司马懿
+  - name: 玩家3
+    role: seer
+    character: 诸葛亮
+  - name: 玩家4
+    role: witch
+    character: 甄姬
+  - name: 玩家5
+    role: villager
+    character: 关羽
+  - name: 玩家6
+    role: villager
+    character: 赵云
+model:
+  provider: openai_compatible
+  model_name: gpt-4o-mini
+  base_url: ${OPENAI_BASE_URL}
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.7

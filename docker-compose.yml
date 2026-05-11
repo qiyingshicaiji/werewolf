@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  werewolf:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    command: ["python", "-m", "werewolf.main", "--config", "config/game.example.yaml", "--mode", "simulate"]
+
+  ui:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    command: ["streamlit", "run", "src/werewolf/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
