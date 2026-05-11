@@ -30,7 +30,7 @@ players:
   - {name: E, role: villager, character: 刘备}
 """
         config_dir = Path("config")
-        temp_path = config_dir / f"test_bad_{uuid.uuid4().hex}.yaml"
+        temp_path = config_dir / f"test_missing_seer_{uuid.uuid4().hex}.yaml"
         temp_path.write_text(content, encoding="utf-8")
         try:
             with self.assertRaises(ValueError):

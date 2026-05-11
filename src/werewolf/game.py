@@ -167,7 +167,10 @@ class SanguoWerewolfGame:
         if not seers:
             return None
         seer = seers[0]
-        target = self._safe_choose(self._alive(), exclude=seer.name)
+        candidates = [p for p in self._alive() if p.name != seer.name]
+        if not candidates:
+            return None
+        target = self._safe_choose(candidates)
         return SeerCheckModelCN(target=target.name, reason="查验可疑对象")
 
     def _witch_action(self, werewolf_target: str | None) -> WitchActionModelCN | None:

@@ -76,9 +76,13 @@ def load_config(path: str | Path) -> ProjectConfig:
         for file in config_root.rglob("*")
         if file.is_file() and file.suffix.lower() in {".yaml", ".yml"}
     }
-    input_key = Path(path).as_posix().lstrip("./")
-    if input_key.startswith("config/"):
-        input_key = input_key[len("config/") :]
+    requested_path = Path(path)
+    if requested_path.is_absolute() or ".." in requested_path.parts:
+        raise ValueError("配置路径非法")
+    requested_parts = requested_path.parts
+    if requested_parts and requested_parts[0] == "config":
+        requested_parts = requested_parts[1:]
+    input_key = Path(*requested_parts).as_posix()
     if input_key not in allowed_files:
         raise ValueError("配置文件不存在或不在 config 目录白名单中")
     config_path = allowed_files[input_key]

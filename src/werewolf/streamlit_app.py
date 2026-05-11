@@ -17,13 +17,16 @@ seed = st.number_input("随机种子", min_value=1, value=42)
 
 if st.button("开始游戏"):
     try:
-        normalized = Path(config_path).as_posix().lstrip("./")
-        if ".." in Path(normalized).parts:
+        requested = Path(config_path)
+        if requested.is_absolute() or ".." in requested.parts:
             raise ValueError("配置路径不允许包含 '..'")
-        if normalized.startswith("/"):
-            raise ValueError("请使用 config/ 下的相对路径")
-        if not normalized.startswith("config/"):
-            normalized = f"config/{normalized}"
+        parts = requested.parts
+        if parts and parts[0] == "config":
+            parts = parts[1:]
+        normalized = Path(*parts).as_posix()
+        if not normalized:
+            raise ValueError("配置路径不能为空")
+        normalized = f"config/{normalized}"
         result = asyncio.run(_run(normalized, mode, max_days, int(seed), "logs"))
         st.success(f"对局完成，胜者：{result['winner']}")
         st.json(result)
