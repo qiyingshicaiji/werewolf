@@ -70,7 +70,12 @@ def _expand_env_vars(value: object) -> object:
 
 
 def load_config(path: str | Path) -> ProjectConfig:
-    config_path = Path(path)
+    config_path = Path(path).expanduser().resolve(strict=True)
+    if config_path.suffix.lower() not in {".yaml", ".yml"}:
+        raise ValueError("配置文件必须是 .yaml 或 .yml")
+    workspace_root = Path.cwd().resolve()
+    if not config_path.is_relative_to(workspace_root):
+        raise ValueError("配置文件必须位于当前工作目录中")
     data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     expanded = _expand_env_vars(data)
     return ProjectConfig.model_validate(expanded)

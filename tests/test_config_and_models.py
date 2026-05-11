@@ -29,11 +29,14 @@ players:
   - {name: D, role: villager, character: 孙尚香}
   - {name: E, role: villager, character: 刘备}
 """
-        with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "bad.yaml"
-            path.write_text(content, encoding="utf-8")
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", dir=Path.cwd(), delete=False, encoding="utf-8") as fp:
+            fp.write(content)
+            temp_path = Path(fp.name)
+        try:
             with self.assertRaises(ValueError):
-                load_config(path)
+                load_config(temp_path)
+        finally:
+            temp_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

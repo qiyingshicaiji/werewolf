@@ -23,7 +23,9 @@ if st.button("开始游戏"):
     except Exception as exc:
         st.error(f"运行失败：{exc}")
 
-log_files = sorted(Path("logs").glob("run_*.log"), reverse=True)
+logs_dir = Path("logs")
+logs_dir.mkdir(parents=True, exist_ok=True)
+log_files = sorted(logs_dir.glob("run_*.log"), reverse=True)
 st.subheader("历史日志")
 for lf in log_files[:10]:
     with st.expander(lf.name, expanded=False):

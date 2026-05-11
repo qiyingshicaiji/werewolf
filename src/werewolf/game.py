@@ -82,8 +82,8 @@ class SanguoWerewolfGame:
             for p in config.players
         ]
         self.agents = {p.name: PlayerAgent(p, self.rng) for p in self.players}
-        self.witch_antidote = True
-        self.witch_poison = True
+        self.witch_has_antidote = True
+        self.witch_has_poison = True
         self.day = 1
         worker_ids = [w.id for w in config.game.distributed.workers]
         self.distributed_hook = DistributedHook(
@@ -157,6 +157,8 @@ class SanguoWerewolfGame:
         tally: dict[str, int] = {}
         for vote in votes:
             tally[vote.target] = tally.get(vote.target, 0) + 1
+        if not tally:
+            return self._werewolf_kill()
         target = max(tally, key=tally.get)
         return WerewolfKillModelCN(target=target, reason="狼人内部投票结果")
 
@@ -172,8 +174,8 @@ class SanguoWerewolfGame:
         witches = self._alive("witch")
         if not witches:
             return None
-        if werewolf_target and self.witch_antidote and self.rng.random() < 0.5:
-            self.witch_antidote = False
+        if werewolf_target and self.witch_has_antidote and self.rng.random() < 0.5:
+            self.witch_has_antidote = False
             return WitchActionModelCN(
                 action="save",
                 use_antidote=True,
@@ -181,8 +183,8 @@ class SanguoWerewolfGame:
                 reason="判断该玩家暂时不该出局",
             )
         alive_non_witch = [p for p in self._alive() if p.role != "witch"]
-        if self.witch_poison and alive_non_witch and self.rng.random() < 0.2:
-            self.witch_poison = False
+        if self.witch_has_poison and alive_non_witch and self.rng.random() < 0.2:
+            self.witch_has_poison = False
             poison_target = self._safe_choose(alive_non_witch)
             return WitchActionModelCN(
                 action="poison",
@@ -273,6 +275,14 @@ class SanguoWerewolfGame:
             tally: dict[str, int] = {}
             for v in votes:
                 tally[v.target] = tally.get(v.target, 0) + 1
+            if not tally:
+                self.logger.write("error", {"where": "day_vote", "error": "no votes generated"})
+                result = self._win_check()
+                if result:
+                    self.logger.write("game_end", {"day": self.day, "winner": result})
+                    return {"winner": result, "log_path": str(self.logger.path)}
+                self.day += 1
+                continue
             out_name = max(tally, key=tally.get)
             self._eliminate(out_name, "白天公投")
 
