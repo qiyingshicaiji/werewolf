@@ -3,5 +3,7 @@ __pycache__/
 .env
 .venv/
 logs/run_*.log
+logs/run_*.jsonl
+logs/run_*.txt
 logs/*.png
 .DS_Store

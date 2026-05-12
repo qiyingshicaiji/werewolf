@@ -7,7 +7,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./config:/app/config
-    command: ["python", "-m", "werewolf.main", "--config", "config/game.example.yaml", "--mode", "simulate"]
+    command: ["python", "-m", "werewolf.main", "--config", "config/game.example.yaml", "--mode", "llm"]
 
   ui:
     build: .

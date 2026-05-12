@@ -2,8 +2,13 @@ import unittest
 import uuid
 from pathlib import Path
 
-from werewolf.config import load_config
-from werewolf.models import DiscussionModelCN, VoteModelCN
+from werewolf.config import load_config, resolve_config_path
+from werewolf.models import (
+    DiscussionModelCN,
+    VoteModelCN,
+    WerewolfKillModelCN,
+    WitchActionModelCN,
+)
 
 
 class ConfigModelTests(unittest.TestCase):
@@ -12,11 +17,34 @@ class ConfigModelTests(unittest.TestCase):
         self.assertGreaterEqual(len(cfg.players), 5)
         self.assertEqual(cfg.game.max_days, 3)
 
+    def test_resolve_config_path(self):
+        path = resolve_config_path("game.example.yaml")
+        self.assertTrue(path.exists())
+        self.assertIn("config", str(path))
+
+    def test_resolve_config_path_rejects_escape(self):
+        with self.assertRaises(ValueError):
+            resolve_config_path("../secrets/config.yaml")
+
     def test_structured_models(self):
         discussion = DiscussionModelCN(speech="发言", strategy="策略")
         vote = VoteModelCN(target="玩家2", reason="可疑")
+        kill = WerewolfKillModelCN(target="玩家1", reason="测试")
         self.assertEqual(discussion.speech, "发言")
         self.assertEqual(vote.target, "玩家2")
+        self.assertEqual(kill.target, "玩家1")
+
+    def test_witch_model_save_requires_target(self):
+        with self.assertRaises(ValueError):
+            WitchActionModelCN(action="save", reason="想救人，但没指定目标")
+
+    def test_witch_model_poison_requires_target(self):
+        with self.assertRaises(ValueError):
+            WitchActionModelCN(action="poison", reason="想毒人，但没指定目标")
+
+    def test_witch_model_pass_rejects_target(self):
+        with self.assertRaises(ValueError):
+            WitchActionModelCN(action="pass", target="玩家1", reason="pass不应有目标")
 
     def test_validate_roles(self):
         content = """

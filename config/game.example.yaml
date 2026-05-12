@@ -1,7 +1,8 @@
+# 三国狼人杀游戏配置
 game:
   max_days: 3
   speaking_rounds: 1
-  mode: simulate
+  mode: simulate          # simulate 模式使用随机决策（测试用），llm 模式调用大模型
   enable_distributed: false
   distributed:
     backend: simulated
@@ -10,6 +11,8 @@ game:
         host: localhost
       - id: worker-2
         host: localhost
+
+# 玩家配置（至少5人，必须包含：至少1狼人、预言家、女巫）
 players:
   - name: 玩家1
     role: werewolf
@@ -29,9 +32,11 @@ players:
   - name: 玩家6
     role: villager
     character: 赵云
+
+# 模型配置（llm 模式下使用）
 model:
   provider: openai_compatible
-  model_name: gpt-4o-mini
-  base_url: ${OPENAI_BASE_URL}
+  model_name: ${OPENAI_MODEL:-gpt-4o-mini}
+  base_url: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
   api_key_env: OPENAI_API_KEY
   temperature: 0.7

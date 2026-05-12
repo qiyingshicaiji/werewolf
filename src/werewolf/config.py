@@ -69,23 +69,30 @@ def _expand_env_vars(value: object) -> object:
     return value
 
 
-def load_config(path: str | Path) -> ProjectConfig:
+def resolve_config_path(config_path: str | Path) -> Path:
+    """Validate and resolve a config path within the config directory.
+
+    Returns the resolved absolute path to the config file.
+    """
     config_root = (Path.cwd() / "config").resolve()
-    allowed_files = {
-        file.relative_to(config_root).as_posix(): file
-        for file in config_root.rglob("*")
-        if file.is_file() and file.suffix.lower() in {".yaml", ".yml"}
-    }
-    requested_path = Path(path)
+    requested_path = Path(config_path)
     if requested_path.is_absolute() or ".." in requested_path.parts:
-        raise ValueError("配置路径非法")
-    requested_parts = requested_path.parts
-    if requested_parts and requested_parts[0] == "config":
-        requested_parts = requested_parts[1:]
-    input_key = Path(*requested_parts).as_posix()
-    if input_key not in allowed_files:
-        raise ValueError("配置文件不存在或不在 config 目录白名单中")
-    config_path = allowed_files[input_key]
+        raise ValueError("配置路径不允许使用绝对路径或 '..'")
+    parts = requested_path.parts
+    if parts and parts[0] == "config":
+        parts = parts[1:]
+    if not parts:
+        raise ValueError("配置路径不能为空")
+    resolved = Path(config_root, *parts).resolve()
+    if config_root not in resolved.parents and resolved != config_root:
+        raise ValueError("配置文件不在 config 目录下")
+    if not resolved.exists():
+        raise ValueError(f"配置文件不存在: {resolved}")
+    return resolved
+
+
+def load_config(path: str | Path) -> ProjectConfig:
+    config_path = resolve_config_path(path)
     data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     expanded = _expand_env_vars(data)
     return ProjectConfig.model_validate(expanded)
